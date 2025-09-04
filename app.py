@@ -187,7 +187,7 @@ def generate_pdf(row, inst, master, logo_path=None):
     # Calibration Table Logic (TX, SWITCH, GAUGE)
     # ============================
 
-   calib_table_data, col_widths = [],[]
+    calib_table_data, col_widths = [], []
 
     if inst_type.startswith("TX"):
         headers = [
