@@ -1,21 +1,21 @@
 import os
 import io
 import zipfile
-    from datetime import datetime
-    from dateutil.relativedelta import relativedelta
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
-    import pandas as pd
-    import gspread
-    from google.oauth2.service_account import Credentials
-    import json
+import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
+import json
 
-    import streamlit as st
-    from reportlab.platypus import (
+import streamlit as st
+from reportlab.platypus import (
         SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
     )
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib import colors
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.pagesizes import A4
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 
     # ===============================
     # CONFIGURATION (update SHEET_ID and LOGO_PATH after deployment)
