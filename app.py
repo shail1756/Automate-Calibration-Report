@@ -22,8 +22,8 @@
     # CONFIGURATION (update SHEET_ID and LOGO_PATH after deployment)
     # ===============================
     SERVICE_ACCOUNT_FILE = r"C:\\Users\\skm\\Desktop\\CALIBRATION REPORT AUTOMATION\\data\\service_account.json"
-    SHEET_ID = "PUT-YOUR-SHEET-ID-HERE"  # <-- replace with your Google Sheet ID
-    LOGO_PATH = r"C:\\Users\\skm\\Desktop\\CALIBRATION REPORT AUTOMATION\\data\\NPL_LOGO.png"
+    SHEET_ID = "1jgqN9pNWVKsH2gDVCsSmkMpYiyE0_y-vqaxrqt4B8xg"  # <-- replace with your Google Sheet ID
+    LOGO_PATH = r"NPL_LOGO.png"
 
     SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
