@@ -20,16 +20,16 @@ from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     # ===============================
     # CONFIGURATION (update SHEET_ID and LOGO_PATH after deployment)
     # ===============================
-    SERVICE_ACCOUNT_FILE = r"C:\\Users\\skm\\Desktop\\CALIBRATION REPORT AUTOMATION\\data\\service_account.json"
-    SHEET_ID = "1jgqN9pNWVKsH2gDVCsSmkMpYiyE0_y-vqaxrqt4B8xg"  # <-- replace with your Google Sheet ID
-    LOGO_PATH = r"NPL_LOGO.png"
+SERVICE_ACCOUNT_FILE = r"C:\\Users\\skm\\Desktop\\CALIBRATION REPORT AUTOMATION\\data\\service_account.json"
+SHEET_ID = "1jgqN9pNWVKsH2gDVCsSmkMpYiyE0_y-vqaxrqt4B8xg"  # <-- replace with your Google Sheet ID
+LOGO_PATH = r"NPL_LOGO.png"
 
-    SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
+SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
     # ===============================
     # GSpread Auth (Streamlit Secrets friendly)
     # ===============================
-    if "service_account" in st.secrets:
+        if "service_account" in st.secrets:
         svc = st.secrets["service_account"]
         if isinstance(svc, str):
             service_account_info = json.loads(svc)
