@@ -29,20 +29,20 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
     # ===============================
     # GSpread Auth (Streamlit Secrets friendly)
     # ===============================
-        if "service_account" in st.secrets:
-        svc = st.secrets["service_account"]
-        if isinstance(svc, str):
-            service_account_info = json.loads(svc)
-        else:
-            service_account_info = svc
+if "service_account" in st.secrets:
+svc = st.secrets["service_account"]
+if isinstance(svc, str):
+        service_account_info = json.loads(svc)
+else:
+        service_account_info = svc
         # gspread helper from dict (no local file required)
-        try:
-            gc = gspread.service_account_from_dict(service_account_info, scopes=SCOPES)
-        except Exception as e:
+try:
+        gc = gspread.service_account_from_dict(service_account_info, scopes=SCOPES)
+except Exception as e:
             # fallback: convert to Credentials and authorize
-            creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
-            gc = gspread.authorize(creds)
-    else:
+        creds = Credentials.from_service_account_info(service_account_info, scopes=SCOPES)
+        gc = gspread.authorize(creds)
+else:
         # local development fallback
         creds = Credentials.from_service_account_file(SERVICE_ACCOUNT_FILE, scopes=SCOPES)
         gc = gspread.authorize(creds)
@@ -62,34 +62,34 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
     # ===============================
     # HELPERS
     # ===============================
-    def _safe_strip(series, default=""):
-        try:
-            return series.astype(str).str.strip()
-        except Exception:
-            return series.fillna(default)
+def _safe_strip(series, default=""):
+try:
+        return series.astype(str).str.strip()
+except Exception:
+        return series.fillna(default)
 
-    for must_col in ["Instrument Tag", "Master Serial No", "Engineer Name", "Remarks"]:
-        if must_col in df.columns:
+for must_col in ["Instrument Tag", "Master Serial No", "Engineer Name", "Remarks"]:
+if must_col in df.columns:
             df[must_col] = _safe_strip(df[must_col], "")
 
     timestamp_col = next((c for c in df.columns if "timestamp" in c.lower()), None)
 
-    def to_float_or_none(val):
-        try:
-            if val in [None, ""]:
-                return None
-            return float(str(val).strip())
+def to_float_or_none(val):
+try:
+        if val in [None, ""]:
+        return None
+        return float(str(val).strip())
         except Exception:
-            return None
+        return None
 
-    def get_calibration_date(row):
-        if timestamp_col and timestamp_col in row:
+def get_calibration_date(row):
+if timestamp_col and timestamp_col in row:
             dt = pd.to_datetime(row[timestamp_col], errors="coerce")
             if pd.notna(dt):
                 return dt.to_pydatetime()
-        return datetime.now()
+return datetime.now()
 
-    def draw_dual_border(canvas, doc):
+def draw_dual_border(canvas, doc):
         canvas.saveState()
         w, h = A4
         outer, inner = 12, 18
@@ -99,13 +99,13 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
         canvas.rect(inner, inner, w - 2*inner, h - 2*inner)
         canvas.restoreState()
 
-    def fmt(v, ndigits=4):
-        return "" if v is None else str(round(v, ndigits))
+def fmt(v, ndigits=4):
+return "" if v is None else str(round(v, ndigits))
 
     # ===============================
     # PDF GENERATION
     # ===============================
-    def generate_pdf(row, inst, master, logo_path=None):
+def generate_pdf(row, inst, master, logo_path=None):
         inst_tag = row.get("Instrument Tag", "")
         master_serial = row.get("Master Serial No", "")
         inst_type = str(inst.get("INST TYPE", inst.get("Type", ""))).strip().upper()
@@ -178,7 +178,7 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
         # Calibration Table
         calib_table_data, col_widths = [], []
 
-        if inst_type.startswith("TX"):
+if inst_type.startswith("TX"):
             headers = [
                 Paragraph("SL<br/>NO", wrap_style),
                 Paragraph(f"DESIRED<br/>VALUE (UP) ({unit})", wrap_style),
@@ -207,7 +207,7 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
                 ("As Found (100%) Down", "As Found mA (100%) Down"),
             ][::-1]
 
-            for i in range(5):
+                for i in range(5):
                 up_val = to_float_or_none(row.get(up_fields[i][0]))
                 up_mA  = to_float_or_none(row.get(up_fields[i][1]))
                 dn_val = to_float_or_none(row.get(dn_fields[i][0]))
