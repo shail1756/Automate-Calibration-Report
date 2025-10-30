@@ -419,7 +419,7 @@ else:
         else:
             inst, master = inst_rows.iloc[0], master_rows.iloc[0]
             pdf_buffer = generate_pdf(row, inst, master, logo_path=LOGO_PATH)
-            single_filename = f"{inst_tag}_{calib_dt.strftime('%d%m%y')}.pdf"
+            single_filename = f"{inst_tag}_{datetime.now().strftime('%d%m%y')}.pdf"
 
             st.download_button(
                 "⬇️ Download This Report (PDF)",
