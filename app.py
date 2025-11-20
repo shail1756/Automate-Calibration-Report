@@ -420,8 +420,7 @@ else:
             inst, master = inst_rows.iloc[0], master_rows.iloc[0]
             pdf_buffer = generate_pdf(row, inst, master, logo_path=LOGO_PATH)
             calib_dt = get_calibration_date(row)
-            date_str = calib_dt.strftime('%d%m%Y')
-            single_filename = f"{inst_tag}_{date_str.strftime('%d%m%y')}.pdf"
+            single_filename = f"{inst_tag}_{calib_dt.strftime('%d%m%y')}.pdf"
 
             st.download_button(
                 "⬇️ Download This Report (PDF)",
