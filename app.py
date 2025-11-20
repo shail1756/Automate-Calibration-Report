@@ -471,7 +471,8 @@ if gen_all:
 
                 inst, master = inst_rows.iloc[0], master_rows.iloc[0]
                 pdf_buffer = generate_pdf(row, inst, master, logo_path=LOGO_PATH)
-                pdf_filename = f"{inst_tag}_{datetime.now().strftime('%d%m%y')}.pdf"
+                calib_dt = get_calibration_date(row)
+                pdf_filename = f"{inst_tag}_{calib_dt.strftime('%d%m%y')}.pdf"
                 zipf.writestr(pdf_filename, pdf_buffer.read())
                 generated += 1
 
