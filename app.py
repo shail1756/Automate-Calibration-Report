@@ -515,3 +515,100 @@ with st.expander("Data snapshot (current window)"):
     preview_cols = [c for c in preview_cols if c in df_filtered.columns]
     small = df_filtered.sort_values(by=timestamp_col) if timestamp_col else df_filtered
     st.dataframe(small[preview_cols].head(50), use_container_width=True)
+
+# ============================================
+# EXCEL SUMMARY FOR BULK CALIBRATION REPORTS
+# (Paste this AFTER your existing code)
+# ============================================
+
+# This will run in the same click when you press "Generate All Reports (ZIP)"
+if gen_all and not df_filtered.empty:
+    summary_records = []
+
+    # Use same date pattern for PDF filenames as in ZIP generation
+    report_date_str = datetime.now().strftime("%d%m%y")
+
+    for idx, row in df_filtered.iterrows():
+        inst_tag = str(row.get("Instrument Tag", "")).strip()
+        master_serial = str(row.get("Master Serial No", "")).strip()
+
+        # Same lookups as ZIP generation (case-insensitive)
+        inst_rows = instrument_list[instrument_list["TAG"].astype(str).str.upper() == inst_tag.upper()]
+        master_rows = master_instrument_list[master_instrument_list["Serial No."].astype(str).str.upper() == master_serial.upper()]
+
+        # Skip if mapping not found (same behaviour as ZIP)
+        if inst_rows.empty or master_rows.empty:
+            continue
+
+        inst = inst_rows.iloc[0]
+        master = master_rows.iloc[0]
+
+        # Calibration & due dates (same logic as PDF)
+        calib_dt = get_calibration_date(row)
+        due_dt = calib_dt + relativedelta(years=1)
+
+        # Description / service text
+        description = inst.get("SERVICE DESCRIPTION", "") or inst.get("Description", "")
+
+        # PDF filename pattern must match what you used in ZIP creation
+        pdf_filename = f"{inst_tag}_{report_date_str}.pdf"
+
+        # Excel hyperlink formula so that clicking the tag opens the PDF
+        tag_hyperlink_formula = f'=HYPERLINK("{pdf_filename}", "{inst_tag}")'
+
+        summary_records.append({
+            "Instrument Tag": tag_hyperlink_formula,
+            "Description / Service": description,
+            "Calibration Date": calib_dt.strftime("%d-%m-%Y"),
+            "Next Due Date": due_dt.strftime("%d-%m-%Y"),
+            "Master Serial No": master_serial,
+            "Master Make/Type": master.get("Make/Inst.Type", ""),
+            "Master Model": master.get("Model", ""),
+            "Area": inst.get("Area", ""),
+            "Unit": inst.get("Unit:", ""),
+            "Location": inst.get("Location", ""),
+            "Engineer Name": row.get("Engineer Name", ""),
+            "Remarks": row.get("Remarks", "")
+        })
+
+    if summary_records:
+        summary_df = pd.DataFrame(summary_records)
+
+        # Create Excel file in memory
+        excel_buffer = io.BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine="xlsxwriter") as writer:
+            summary_df.to_excel(writer, index=False, sheet_name="Calibration Summary")
+
+            # Optional: basic formatting
+            workbook = writer.book
+            worksheet = writer.sheets["Calibration Summary"]
+
+            # Wider columns for readability
+            worksheet.set_column("A:A", 30)   # Instrument Tag (hyperlink)
+            worksheet.set_column("B:B", 40)   # Description
+            worksheet.set_column("C:D", 15)   # Dates
+            worksheet.set_column("E:G", 20)   # Master details
+            worksheet.set_column("H:J", 15)   # Area/Unit/Location
+            worksheet.set_column("K:K", 20)   # Engineer Name
+            worksheet.set_column("L:L", 30)   # Remarks
+
+        excel_buffer.seek(0)
+
+        # Download button for the Excel summary
+        st.download_button(
+            "⬇️ Download Calibration Summary (Excel)",
+            data=excel_buffer.getvalue(),
+            file_name="Calibration_Summary.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            key="dl_summary_excel"
+        )
+
+        # Optional: log the action in your existing activity log
+        st.session_state.activity_log.append({
+            "time": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+            "action": "Summary Excel Generated",
+            "generated_rows": len(summary_records)
+        })
+    else:
+        st.info("No valid records to add in the summary Excel (all were skipped in ZIP generation).")
+
