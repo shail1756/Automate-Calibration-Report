@@ -552,20 +552,19 @@ else:
             inst = inst_rows.iloc[0]
             master = master_rows.iloc[0]
 
-            # 👉 Use SAME calibration date logic as your PDF reports
+            # Use SAME calibration date logic as PDF
             calib_dt = get_calibration_date(row)
             due_dt = calib_dt + relativedelta(years=1)
 
-            # 🔑 VERY IMPORTANT: filename pattern MUST match your real PDF filenames
-            # Here we assume: TAG_ddmmyy.pdf  (date = calibration date)
+            # 🔑 Filename pattern: TAG_ddmmyy.pdf (date = calibration date)
             report_date_str = calib_dt.strftime("%d%m%y")
             pdf_filename = f"{inst_tag}_{report_date_str}.pdf"
 
             # Description / Service text
             description = inst.get("SERVICE DESCRIPTION", "") or inst.get("Description", "")
 
-            # Excel hyperlink: clicking the Tag will open the PDF
-            # (when Excel file is in the same folder as the PDFs)
+            # Excel hyperlink: clicking Tag opens the PDF
+            # (Excel file must be saved in same folder as these PDFs)
             tag_hyperlink_formula = f'=HYPERLINK("{pdf_filename}", "{inst_tag}")'
 
             summary_records.append({
@@ -588,51 +587,63 @@ else:
         else:
             summary_df = pd.DataFrame(summary_records)
 
-            # Create Excel file in memory
-            excel_buffer = io.BytesIO()
+            # Try to import an Excel engine (openpyxl)
+            try:
+                import openpyxl  # noqa: F401
+                excel_engine = "openpyxl"
+            except ModuleNotFoundError:
+                excel_engine = None
 
-            # ✅ Use openpyxl (works on Streamlit Cloud)
-            with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
-                summary_df.to_excel(writer, index=False, sheet_name="Calibration Summary")
-                worksheet = writer.sheets["Calibration Summary"]
+            if excel_engine is None:
+                st.error(
+                    "Excel engine 'openpyxl' is not installed on this server.\n\n"
+                    "Ask the app owner to add `openpyxl` to requirements.txt "
+                    "on Streamlit Cloud, then redeploy the app."
+                )
+            else:
+                excel_buffer = io.BytesIO()
 
-                # Optional: adjust column widths using openpyxl
-                from openpyxl.utils import get_column_letter
+                with pd.ExcelWriter(excel_buffer, engine=excel_engine) as writer:
+                    summary_df.to_excel(writer, index=False, sheet_name="Calibration Summary")
+                    worksheet = writer.sheets["Calibration Summary"]
 
-                column_widths = {
-                    1: 30,   # A: Instrument Tag (hyperlink)
-                    2: 40,   # B: Description / Service
-                    3: 15,   # C: Calibration Date
-                    4: 15,   # D: Next Due Date
-                    5: 20,   # E: Master Serial No
-                    6: 20,   # F: Master Make/Type
-                    7: 20,   # G: Master Model
-                    8: 15,   # H: Area
-                    9: 15,   # I: Unit
-                    10: 15,  # J: Location
-                    11: 20,  # K: Engineer Name
-                    12: 30   # L: Remarks
-                }
+                    # Adjust column widths using openpyxl
+                    from openpyxl.utils import get_column_letter
 
-                for col_idx, width in column_widths.items():
-                    col_letter = get_column_letter(col_idx)
-                    worksheet.column_dimensions[col_letter].width = width
+                    column_widths = {
+                        1: 30,   # A: Instrument Tag (hyperlink)
+                        2: 40,   # B: Description / Service
+                        3: 15,   # C: Calibration Date
+                        4: 15,   # D: Next Due Date
+                        5: 20,   # E: Master Serial No
+                        6: 20,   # F: Master Make/Type
+                        7: 20,   # G: Master Model
+                        8: 15,   # H: Area
+                        9: 15,   # I: Unit
+                        10: 15,  # J: Location
+                        11: 20,  # K: Engineer Name
+                        12: 30   # L: Remarks
+                    }
 
-            excel_buffer.seek(0)
+                    for col_idx, width in column_widths.items():
+                        col_letter = get_column_letter(col_idx)
+                        worksheet.column_dimensions[col_letter].width = width
 
-            st.download_button(
-                "⬇️ Download Calibration Summary (Excel)",
-                data=excel_buffer.getvalue(),
-                file_name="Calibration_Summary.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                key="dl_summary_excel_only"
-            )
+                excel_buffer.seek(0)
 
-            # Log in your existing activity log
-            st.session_state.activity_log.append({
-                "time": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-                "action": "Summary Excel Generated (Current Window)",
-                "records": len(summary_records)
-            })
+                st.download_button(
+                    "⬇️ Download Calibration Summary (Excel)",
+                    data=excel_buffer.getvalue(),
+                    file_name="Calibration_Summary.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="dl_summary_excel_only"
+                )
 
-            st.success(f"Excel summary generated for {len(summary_records)} records.")
+                # Log in your existing activity log
+                st.session_state.activity_log.append({
+                    "time": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+                    "action": "Summary Excel Generated (Current Window)",
+                    "records": len(summary_records)
+                })
+
+                st.success(f"Excel summary generated for {len(summary_records)} records.")
