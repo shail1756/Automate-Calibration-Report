@@ -517,7 +517,7 @@ with st.expander("Data snapshot (current window)"):
     st.dataframe(small[preview_cols].head(50), use_container_width=True)
 
 # ============================================
-# EXCEL SUMMARY GENERATOR (SEPARATE, NON-INTRUSIVE)
+# 📊 EXCEL SUMMARY GENERATOR (NON-INTRUSIVE)
 # ============================================
 st.divider()
 st.subheader("📊 Generate Calibration Summary (Excel) for Current Window")
@@ -537,7 +537,7 @@ else:
             if not inst_tag:
                 continue
 
-            # Case-insensitive lookups (same as your ZIP logic)
+            # Case-insensitive lookups (same style as your ZIP logic)
             inst_rows = instrument_list[
                 instrument_list["TAG"].astype(str).str.upper() == inst_tag.upper()
             ]
@@ -552,22 +552,20 @@ else:
             inst = inst_rows.iloc[0]
             master = master_rows.iloc[0]
 
-            # Use SAME calibration date logic as main app
+            # 👉 Use SAME calibration date logic as your PDF reports
             calib_dt = get_calibration_date(row)
             due_dt = calib_dt + relativedelta(years=1)
 
-            # IMPORTANT: filename must match whatever you use while saving PDFs
-            # If in your original code you now do:
-            # pdf_filename = f"{inst_tag}_{calib_dt.strftime('%d%m%y')}.pdf"
-            # then we match exactly the same pattern here:
+            # 🔑 VERY IMPORTANT: filename pattern MUST match your real PDF filenames
+            # Here we assume: TAG_ddmmyy.pdf  (date = calibration date)
             report_date_str = calib_dt.strftime("%d%m%y")
             pdf_filename = f"{inst_tag}_{report_date_str}.pdf"
 
             # Description / Service text
             description = inst.get("SERVICE DESCRIPTION", "") or inst.get("Description", "")
 
-            # Excel hyperlink: clicking on tag will open the PDF
-            # (works when Excel file is in the same folder as the PDFs)
+            # Excel hyperlink: clicking the Tag will open the PDF
+            # (when Excel file is in the same folder as the PDFs)
             tag_hyperlink_formula = f'=HYPERLINK("{pdf_filename}", "{inst_tag}")'
 
             summary_records.append({
@@ -592,20 +590,33 @@ else:
 
             # Create Excel file in memory
             excel_buffer = io.BytesIO()
-            with pd.ExcelWriter(excel_buffer, engine="xlsxwriter") as writer:
-                summary_df.to_excel(writer, index=False, sheet_name="Calibration Summary")
 
-                workbook = writer.book
+            # ✅ Use openpyxl (works on Streamlit Cloud)
+            with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+                summary_df.to_excel(writer, index=False, sheet_name="Calibration Summary")
                 worksheet = writer.sheets["Calibration Summary"]
 
-                # Make columns readable
-                worksheet.set_column("A:A", 30)   # Tag (hyperlink)
-                worksheet.set_column("B:B", 40)   # Description
-                worksheet.set_column("C:D", 15)   # Dates
-                worksheet.set_column("E:G", 20)   # Master details
-                worksheet.set_column("H:J", 15)   # Area/Unit/Location
-                worksheet.set_column("K:K", 20)   # Engineer Name
-                worksheet.set_column("L:L", 30)   # Remarks
+                # Optional: adjust column widths using openpyxl
+                from openpyxl.utils import get_column_letter
+
+                column_widths = {
+                    1: 30,   # A: Instrument Tag (hyperlink)
+                    2: 40,   # B: Description / Service
+                    3: 15,   # C: Calibration Date
+                    4: 15,   # D: Next Due Date
+                    5: 20,   # E: Master Serial No
+                    6: 20,   # F: Master Make/Type
+                    7: 20,   # G: Master Model
+                    8: 15,   # H: Area
+                    9: 15,   # I: Unit
+                    10: 15,  # J: Location
+                    11: 20,  # K: Engineer Name
+                    12: 30   # L: Remarks
+                }
+
+                for col_idx, width in column_widths.items():
+                    col_letter = get_column_letter(col_idx)
+                    worksheet.column_dimensions[col_letter].width = width
 
             excel_buffer.seek(0)
 
@@ -617,10 +628,10 @@ else:
                 key="dl_summary_excel_only"
             )
 
-            # Log the activity into your existing log
+            # Log in your existing activity log
             st.session_state.activity_log.append({
                 "time": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-                "action": "Summary Excel Generated (Only)",
+                "action": "Summary Excel Generated (Current Window)",
                 "records": len(summary_records)
             })
 
